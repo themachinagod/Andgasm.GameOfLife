@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Andgasm.GameOfLife.Core.Abstractions\Andgasm.GameOfLife.Core.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
