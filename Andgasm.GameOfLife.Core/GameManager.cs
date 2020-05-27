@@ -35,10 +35,14 @@ namespace Andgasm.GameOfLife.Core.Abstractions
             _boardManager = boardManager;
         }
 
-        public async Task StartGame()
+        public async Task StartGame(bool[,] seedBoard = null)
         {
             _gameTimer.Restart();
-            _boardManager.InitialiseRandomBoard();
+            if (seedBoard == null) _boardManager.InitialiseRandomBoard();
+            else _boardManager.InitialiseFromSeed(seedBoard);
+            GameTickProcessed?.Invoke(this, new EventArgs());
+            TickCount++;
+
             do
             {
                 _boardManager.ProcessBoardTick();

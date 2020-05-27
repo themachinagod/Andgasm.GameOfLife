@@ -10,7 +10,7 @@ namespace Andgasm.GameOfLife.Core
     public class BoardManager : IBoardManager
     {
         private readonly IBoardContext _boardContext;
-        private readonly ICellStateManager _cellStateManager;
+        private readonly ICellStateRule _cellStateManager;
         private readonly IGameConfiguration _gameConfiguration;
         private readonly Stopwatch _processTimer = new Stopwatch();
 
@@ -18,7 +18,7 @@ namespace Andgasm.GameOfLife.Core
 
         public BoardManager(IGameConfiguration gameConfiguration, 
                             IBoardContext boardContext, 
-                            ICellStateManager cellStateManager)
+                            ICellStateRule cellStateManager)
         {
             _boardContext = boardContext;
             _gameConfiguration = gameConfiguration;
@@ -44,11 +44,16 @@ namespace Andgasm.GameOfLife.Core
             _boardContext.GameBoard = tmpBoard;
         }
 
+        public void InitialiseFromSeed(bool[,] seedBoard)
+        {
+            _boardContext.Height = seedBoard.GetUpperBound(0);
+            _boardContext.Width = seedBoard.GetUpperBound(1);
+            _boardContext.LoopEdges = _gameConfiguration.LoopEdges;
+            _boardContext.GameBoard = seedBoard;
+        }
+
         public void ProcessBoardTick()
         {
-            // TODO: potential for plugable custom information miners that are accessable by pluggable custom rules??
-            // TODO: potential for plugable custom rules instead on fixed GoL rules??
-            
             _processTimer.Start();
             var tmpBoard = new bool[_boardContext.Width, _boardContext.Height];
             ParallelOptions po = new ParallelOptions() { MaxDegreeOfParallelism = _gameConfiguration.MaxConcurrency };
@@ -56,11 +61,7 @@ namespace Andgasm.GameOfLife.Core
             {
                 Parallel.For(0, _boardContext.Width, po, x =>
                 {
-                    // A live cell dies unless it has exactly 2 or 3 live neighbors.
-                    // A dead cell remains dead unless it has exactly 3 live neighbors.
-                    var cell = _boardContext.GameBoard[x, y];
-                    var cellLiveNeighborsCount = _cellStateManager.CountLiveNeighbors(x, y);
-                    tmpBoard[x, y] = cell && (cellLiveNeighborsCount == 2 || cellLiveNeighborsCount == 3) || !cell && cellLiveNeighborsCount == 3;
+                    _cellStateManager.ExecuteCellStateRule(tmpBoard, x, y);
                 });
             });
             _boardContext.GameBoard = tmpBoard;

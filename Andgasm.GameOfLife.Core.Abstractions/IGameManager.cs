@@ -12,6 +12,6 @@ namespace Andgasm.GameOfLife.Core.Abstractions
 
         int TickCount { get; set; }
 
-        Task StartGame();
+        Task StartGame(bool[,] seedBoard = null);
     }
 }

@@ -18,11 +18,13 @@ namespace ConwaysGameOfLife
         static async Task Main(string[] args)
         {
             _serviceProvider = InitialiseCompositionRoot();
-            InitialiseGameConfiguration();
+            var _gameconfig = InitialiseGameConfiguration();
 
             _gameManager = _serviceProvider.GetService<IGameManager>();
             _gameManager.GameTickProcessed += RenderBoardState;
-            await _gameManager.StartGame();
+
+            var seed = InitialiseTestBoardSeed(_gameconfig);
+            await _gameManager.StartGame(seed);
 
             RenderCompletionStats(_gameManager);
             Console.WriteLine("Press any key to close the application...");
@@ -36,22 +38,23 @@ namespace ConwaysGameOfLife
                 .AddSingleton<IBoardContext, BoardContext>()
                 .AddTransient<IGameManager, GameManager>()
                 .AddTransient<IBoardManager, BoardManager>()
-                .AddTransient<ICellStateManager, CellStateManager>()
+                .AddTransient<ICellStateRule, GoLCellStateManager>()
                 .BuildServiceProvider();
         }
 
-        static void InitialiseGameConfiguration()
+        static IGameConfiguration InitialiseGameConfiguration()
         {
             var gameconfig = _serviceProvider.GetService<IGameConfiguration>();
-            gameconfig.Height = 40;
-            gameconfig.Width = 85;
+            gameconfig.Height = 15;
+            gameconfig.Width = 15;
             gameconfig.LoopEdges = true;
             gameconfig.TickDelay = 50;
             gameconfig.MaxTickCount = 1000;
-            gameconfig.ManualTickProgression = false;
+            gameconfig.ManualTickProgression = true;
             gameconfig.DeadCellInitialisationBias = 2;
-            gameconfig.MaxConcurrency = 4;
+            gameconfig.MaxConcurrency = 1;
             gameconfig.RaiseRenderEvents = true;
+            return gameconfig;
         }
 
         static void RenderBoardState(object sender, EventArgs args)
@@ -79,6 +82,22 @@ namespace ConwaysGameOfLife
             Console.WriteLine("Number of ticks processed: " + gamemanager.TickCount);
             Console.WriteLine("Average Process Time Per Tick: " + gamemanager.AverageTickElapsedTime);
             Console.WriteLine("Total Game Process Time: " + gamemanager.GameElapsedTime);
+        }
+
+        static bool[,] InitialiseTestBoardSeed(IGameConfiguration _gameConfiguration)
+        {
+            const int livecellseed = 2;
+            var counter = 0;
+            var tmpBoard = new bool[_gameConfiguration.Width, _gameConfiguration.Height];
+            for (int y = 0; y < _gameConfiguration.Height; y++)
+            {
+                for (int x = 0; x < _gameConfiguration.Width; x++)
+                {
+                    tmpBoard[x, y] = counter++ == livecellseed;
+                    if (counter > livecellseed) counter = 0;
+                }
+            }
+            return tmpBoard;
         }
     }
 }
